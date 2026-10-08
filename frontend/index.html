@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#c6ded5">
+  <title>Khu vườn trên mây · Cloud Garden</title>
+  <link rel="icon" href="assets/leaf.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <main id="game" aria-label="Khu vườn trên mây">
+    <canvas id="farm" aria-label="Nông trại 2D. Chọn một ô hoa hoặc dùng danh sách ô trồng." tabindex="0"></canvas>
+    <div class="sky-grain" aria-hidden="true"></div>
+    <header class="farm-heading surface"><span class="eyebrow" id="brand-caption">MỘT CHÚT BÌNH YÊN</span><h1 id="brand">Khu vườn trên mây</h1><span class="brand-detail" id="subtitle">Trồng niềm vui, gặt hạnh phúc.</span></header>
+    <nav class="side-nav" aria-label="Điều hướng">
+      <button class="round-button" data-menu="mail" id="mail-button"><span data-icon="mail"></span><span class="notification-dot" id="mail-dot"></span><span class="sr-only" data-label="mail">Thư & sự kiện</span></button>
+      <button class="round-button" data-menu="settings"><span data-icon="settings"></span><span class="sr-only" data-label="settings">Cài đặt</span></button>
+      <span class="nav-separator"></span>
+      <button class="round-button" data-menu="buildings"><span data-icon="house"></span><span class="sr-only" data-label="build">Xây dựng</span></button>
+      <span class="nav-caption" data-label="build">Xây dựng</span>
+      <button class="round-button" data-menu="animals"><span data-icon="chicken"></span><span class="sr-only" data-label="animals">Chăn nuôi</span></button>
+      <span class="nav-caption" data-label="animals">Chăn nuôi</span>
+    </nav>
+    <button class="clock surface" id="clock" data-action="daynight" title="Đổi ngày/đêm (N)"><span id="clock-icon"></span><span id="clock-text">NGÀY 1 · 08:00</span><span class="clock-hint">↔</span></button>
+    <aside class="wallets" aria-label="Tiền của bạn">
+      <button class="wallet surface" data-menu="coins"><span data-icon="coin"></span><span class="wallet-info"><small>COIN</small><strong id="coins">—</strong></span><span class="wallet-plus">+</span></button>
+      <button class="wallet surface" data-menu="diamonds"><span data-icon="diamond"></span><span class="wallet-info"><small data-label="diamonds">KIM CƯƠNG</small><strong id="diamonds">—</strong></span><span class="wallet-plus">+</span></button>
+    </aside>
+    <div class="home-area"><button class="round-button" id="home"><span data-icon="home"></span><span class="sr-only" data-label="home">Về nông trại</span></button><span class="nav-caption" data-label="farm">Nông trại</span></div>
+    <button class="quest surface" data-menu="mail"><span class="eyebrow" data-label="firstHarvest">MÙA GẶT ĐẦU TIÊN</span><span class="quest-row"><strong data-label="harvestSix">Thu hoạch 6 ô hoa</strong><span id="quest-count">0 / 6</span></span><span class="progress"><span id="quest-progress"></span></span></button>
+    <nav class="tool-dock surface" aria-label="Dụng cụ">
+      <button class="tool active" data-tool="select" aria-pressed="true"><span data-icon="pointer"></span><span data-label="select">Chọn</span><kbd>1</kbd></button>
+      <button class="tool" data-menu="seeds" data-tool-label="plant" aria-pressed="false"><span data-icon="leaf"></span><span data-label="plant">Trồng hoa</span><kbd>2</kbd></button>
+      <button class="tool" data-tool="water" aria-pressed="false"><span data-icon="water"></span><span data-label="water">Tưới</span><kbd>3</kbd></button>
+      <button class="tool" data-tool="dig" aria-pressed="false"><span data-icon="shovel"></span><span data-label="dig">Đào bỏ</span><kbd>4</kbd></button>
+    </nav>
+    <section class="plot-info surface" id="plot-info" aria-live="polite"></section>
+    <div class="connection" id="connection" role="status"><span></span><span id="connection-label">Đang kết nối khu vườn…</span></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <div class="loading" id="loading"><span data-icon="leaf"></span><h2>Đang mở khu vườn…</h2><p>Những điều nhỏ bé đang lớn lên.</p></div>
+  </main>
+  <dialog id="menu" aria-labelledby="menu-title"><div class="modal-header"><div><span class="eyebrow" id="menu-kicker"></span><h2 id="menu-title"></h2><p id="menu-description"></p></div><button class="close-button" id="close-menu" aria-label="Đóng">×</button></div><div id="menu-content"></div></dialog>
+  <noscript>Bật JavaScript để chơi Khu vườn trên mây.</noscript>
+</body>
+</html>

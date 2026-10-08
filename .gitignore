@@ -1,0 +1,7 @@
+out/
+database/*.db
+database/*.db-wal
+database/*.db-shm
+previews/*.db
+previews/*.db-wal
+previews/*.db-shm
