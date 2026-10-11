@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS buildings (
 
 CREATE TABLE IF NOT EXISTS animals (
     player_id INT NOT NULL,
-    species ENUM('ga','lon','bo') NOT NULL,
+    species ENUM('ga','lon','bo','cuu','de') NOT NULL,
     building_type VARCHAR(20) NOT NULL,
     fed BOOLEAN NOT NULL DEFAULT FALSE,
     progress DOUBLE NOT NULL DEFAULT 0,
@@ -81,7 +81,9 @@ CREATE TABLE IF NOT EXISTS animals (
     CONSTRAINT ck_species_habitat CHECK (
         (species = 'ga' AND building_type = 'COOP') OR
         (species = 'lon' AND building_type = 'MUD_PEN') OR
-        (species = 'bo' AND building_type = 'COW_BARN')
+        (species = 'bo' AND building_type = 'COW_BARN') OR
+        (species = 'cuu' AND building_type = 'SHEEP_BARN') OR
+        (species = 'de' AND building_type = 'GOAT_BARN')
     )
 ) ENGINE=InnoDB;
 
@@ -102,6 +104,14 @@ CREATE TABLE IF NOT EXISTS inventory (
     CONSTRAINT fk_inventory_player FOREIGN KEY (player_id) REFERENCES player(id),
     CONSTRAINT fk_inventory_product FOREIGN KEY (product) REFERENCES product_types(code),
     CHECK (quantity >= 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS farm_settings (
+    player_id INT NOT NULL,
+    guard_dog BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (player_id),
+    CONSTRAINT fk_farm_settings_player FOREIGN KEY (player_id) REFERENCES player(id),
+    CHECK (guard_dog IN (0,1))
 ) ENGINE=InnoDB;
 
 SHOW TABLES;

@@ -28,15 +28,29 @@ CREATE TABLE IF NOT EXISTS buildings (
 );
 CREATE TABLE IF NOT EXISTS animals (
     player_id INTEGER NOT NULL REFERENCES player(id),
-    species TEXT NOT NULL CHECK(species IN ('ga','lon','bo')),
+    species TEXT NOT NULL CHECK(species IN ('ga','lon','bo','cuu','de')),
     fed INTEGER NOT NULL CHECK(fed IN (0,1)),
     progress REAL NOT NULL CHECK(progress >= 0),
     PRIMARY KEY(player_id,species)
 );
 CREATE TABLE IF NOT EXISTS inventory (
     player_id INTEGER NOT NULL REFERENCES player(id),
-    product TEXT NOT NULL CHECK(product IN ('EGG','PORK','BEEF')),
+    product TEXT NOT NULL CHECK(product IN ('EGG','PORK','BEEF','WOOL','GOAT_MEAT')),
     quantity INTEGER NOT NULL CHECK(quantity >= 0),
     PRIMARY KEY(player_id,product)
 );
-PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS quest_progress (
+    player_id INTEGER NOT NULL REFERENCES player(id),
+    metric TEXT NOT NULL,
+    amount INTEGER NOT NULL CHECK(amount >= 0),
+    PRIMARY KEY(player_id,metric)
+);
+CREATE TABLE IF NOT EXISTS quest_claims (
+    player_id INTEGER NOT NULL REFERENCES player(id),
+    quest_id TEXT NOT NULL,
+    PRIMARY KEY(player_id,quest_id)
+);
+CREATE TABLE IF NOT EXISTS farm_settings (
+    player_id INTEGER PRIMARY KEY REFERENCES player(id),
+    guard_dog INTEGER NOT NULL CHECK(guard_dog IN (0,1))
+);

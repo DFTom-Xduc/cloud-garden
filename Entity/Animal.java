@@ -1,6 +1,7 @@
 package Entity;
 /** Eggs repeat; collecting meat consumes the animal, requiring a new purchase. */
 public abstract class Animal {
+    public static final java.util.List<String> IDS=java.util.List.of("ga","lon","bo","cuu","de");
     private boolean fed;
     private double progress;
     public abstract String id();
@@ -22,6 +23,6 @@ public abstract class Animal {
     public void reset() { fed=false; progress=0; }
     public void restore(boolean fed,double progress) { this.fed=fed;this.progress=Math.max(0,Math.min(duration(),progress)); }
     public static Animal create(String id) {
-        return switch(id) { case "ga" -> new Ga(); case "lon" -> new Lon(); case "bo" -> new Bo(); default -> throw new IllegalArgumentException("Unknown animal: "+id); };
+        return switch(id) { case "ga" -> new Ga(); case "lon" -> new Lon(); case "bo" -> new Bo(); case "cuu" -> new Cuu(); case "de" -> new De(); default -> throw new IllegalArgumentException("Unknown animal: "+id); };
     }
 }

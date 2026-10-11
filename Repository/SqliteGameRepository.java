@@ -18,7 +18,25 @@ public final class SqliteGameRepository implements GameRepository {
                 statement.execute("PRAGMA journal_mode=WAL");
                 for(String sql:Files.readString(schema).split(";"))if(!sql.isBlank())statement.execute(sql);
             }
+            migrateHerdTables();
         } catch(Exception error){throw new IllegalStateException("Cannot open SQLite database: "+file,error);}
+    }
+    private void migrateHerdTables() throws SQLException {
+        connection.setAutoCommit(false);
+        try(Statement s=connection.createStatement()) {
+            for(String table:List.of("animals","inventory")) {
+                String definition;
+                try(ResultSet r=s.executeQuery("SELECT sql FROM sqlite_master WHERE name='"+table+"'")){definition=r.next()?r.getString(1):"";}
+                if(definition.contains(table.equals("animals")?"'cuu'":"'WOOL'"))continue;
+                String columns=table.equals("animals")?"species TEXT NOT NULL CHECK(species IN ('ga','lon','bo','cuu','de')),fed INTEGER NOT NULL CHECK(fed IN (0,1)),progress REAL NOT NULL CHECK(progress>=0),PRIMARY KEY(player_id,species)":"product TEXT NOT NULL CHECK(product IN ('EGG','PORK','BEEF','WOOL','GOAT_MEAT')),quantity INTEGER NOT NULL CHECK(quantity>=0),PRIMARY KEY(player_id,product)";
+                s.executeUpdate("CREATE TABLE "+table+"_v3(player_id INTEGER NOT NULL REFERENCES player(id),"+columns+")");
+                s.executeUpdate("INSERT INTO "+table+"_v3 SELECT * FROM "+table);
+                s.executeUpdate("DROP TABLE "+table);
+                s.executeUpdate("ALTER TABLE "+table+"_v3 RENAME TO "+table);
+            }
+            s.execute("PRAGMA user_version=3");connection.commit();
+        } catch(SQLException error){connection.rollback();throw error;}
+        finally{connection.setAutoCommit(true);}
     }
     @Override public synchronized Optional<GameSave> load() {
         try(Statement query=connection.createStatement();ResultSet player=query.executeQuery("SELECT * FROM player WHERE id=1")) {
@@ -34,7 +52,12 @@ public final class SqliteGameRepository implements GameRepository {
             try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT type FROM buildings WHERE player_id=1")) {while(rows.next())buildings.add(BuildingType.valueOf(rows.getString(1)));}
             try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT * FROM animals WHERE player_id=1")) {while(rows.next())animals.add(new GameSave.Livestock(rows.getString("species"),rows.getBoolean("fed"),rows.getDouble("progress")));}
             try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT * FROM inventory WHERE player_id=1")) {while(rows.next())stock.put(ProductType.valueOf(rows.getString("product")),rows.getInt("quantity"));}
-            return Optional.of(new GameSave(coins,diamonds,music,sfx,english,claimed,expanded,harvests,minutes,plots,buildings,animals,stock));
+            Map<String,Integer> progress=new HashMap<>();Set<String> claims=new HashSet<>();
+            try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT metric,amount FROM quest_progress WHERE player_id=1")){while(rows.next())progress.put(rows.getString(1),rows.getInt(2));}
+            try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT quest_id FROM quest_claims WHERE player_id=1")){while(rows.next())claims.add(rows.getString(1));}
+            boolean dog=false;
+            try(Statement s=connection.createStatement();ResultSet rows=s.executeQuery("SELECT guard_dog FROM farm_settings WHERE player_id=1")){if(rows.next())dog=rows.getBoolean(1);}
+            return Optional.of(new GameSave(coins,diamonds,music,sfx,english,claimed,expanded,harvests,minutes,plots,buildings,animals,stock,progress,claims,dog));
         } catch(SQLException error){throw new IllegalStateException("Cannot load game",error);}
     }
     @Override public synchronized void save(GameSave save) {
@@ -45,13 +68,16 @@ public final class SqliteGameRepository implements GameRepository {
                 p.setBoolean(6,save.rewardClaimed());p.setBoolean(7,save.expanded());p.setInt(8,save.harvestTotal());p.setDouble(9,save.gameMinutes());
                 p.executeUpdate();
             }
-            try(Statement s=connection.createStatement()){for(String table:List.of("plots","buildings","animals","inventory"))s.executeUpdate("DELETE FROM "+table+" WHERE player_id=1");}
+            try(Statement s=connection.createStatement()){for(String table:List.of("plots","buildings","animals","inventory","quest_progress","quest_claims"))s.executeUpdate("DELETE FROM "+table+" WHERE player_id=1");}
             try(PreparedStatement p=connection.prepareStatement("INSERT INTO plots VALUES(1,?,?,?,?,?,?)")) {
                 for(var plot:save.plots()){p.setInt(1,plot.row());p.setInt(2,plot.column());p.setString(3,plot.flowerId());p.setInt(4,plot.level());p.setInt(5,plot.water());p.setDouble(6,plot.cooldown());p.addBatch();}p.executeBatch();
             }
             try(PreparedStatement p=connection.prepareStatement("INSERT INTO buildings VALUES(1,?)")){for(var building:save.buildings()){p.setString(1,building.name());p.addBatch();}p.executeBatch();}
             try(PreparedStatement p=connection.prepareStatement("INSERT INTO animals VALUES(1,?,?,?)")){for(var animal:save.animals()){p.setString(1,animal.id());p.setBoolean(2,animal.fed());p.setDouble(3,animal.progress());p.addBatch();}p.executeBatch();}
             try(PreparedStatement p=connection.prepareStatement("INSERT INTO inventory VALUES(1,?,?)")){for(var item:save.inventory().entrySet()){p.setString(1,item.getKey().name());p.setInt(2,item.getValue());p.addBatch();}p.executeBatch();}
+            try(PreparedStatement p=connection.prepareStatement("INSERT INTO quest_progress VALUES(1,?,?)")){for(var item:save.questProgress().entrySet()){p.setString(1,item.getKey());p.setInt(2,item.getValue());p.addBatch();}p.executeBatch();}
+            try(PreparedStatement p=connection.prepareStatement("INSERT INTO quest_claims VALUES(1,?)")){for(String id:save.claimedQuests()){p.setString(1,id);p.addBatch();}p.executeBatch();}
+            try(PreparedStatement p=connection.prepareStatement("INSERT INTO farm_settings VALUES(1,?) ON CONFLICT(player_id) DO UPDATE SET guard_dog=excluded.guard_dog")){p.setBoolean(1,save.guardDog());p.executeUpdate();}
             connection.commit();
         } catch(SQLException error) {
             try{connection.rollback();}catch(SQLException rollback){error.addSuppressed(rollback);}

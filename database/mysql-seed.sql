@@ -13,17 +13,22 @@ INSERT INTO building_types VALUES
 ('COOP','Chuồng gà','Chicken coop',100),
 ('MUD_PEN','Bãi bùn cho lợn','Pig mud pen',140),
 ('COW_BARN','Chuồng bò & bãi cỏ','Cattle barn & paddock',180),
-('COTTAGE','Nhà gỗ mới','Timber farmhouse',200);
+('COTTAGE','Nhà gỗ mới','Timber farmhouse',200),
+('SHEEP_BARN','Chuồng cừu & đồng cỏ','Sheep barn & pasture',240),
+('GOAT_BARN','Trang trại dê','Goat farm',230);
 
 INSERT INTO product_types VALUES
 ('EGG','Trứng','Eggs',8),
 ('PORK','Thịt lợn','Pork',28),
-('BEEF','Thịt bò','Beef',40);
+('BEEF','Thịt bò','Beef',40),
+('WOOL','Lông cừu','Wool',22),
+('GOAT_MEAT','Thịt dê','Goat meat',38);
 
 INSERT INTO player(id,display_name) VALUES(1,'Người làm vườn');
 INSERT INTO buildings VALUES(1,'COOP');
 INSERT INTO animals(player_id,species,building_type) VALUES(1,'ga','COOP');
-INSERT INTO inventory VALUES(1,'EGG',0),(1,'PORK',0),(1,'BEEF',0);
+INSERT INTO inventory VALUES(1,'EGG',0),(1,'PORK',0),(1,'BEEF',0),(1,'WOOL',0),(1,'GOAT_MEAT',0);
+INSERT INTO farm_settings VALUES(1,FALSE);
 
 INSERT INTO plots(player_id,row_index,column_index,flower_id) VALUES
 (1,0,0,'daisy'),(1,0,1,'lavender'),(1,0,2,'rose'),(1,0,3,'sunflower'),

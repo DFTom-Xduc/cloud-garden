@@ -12,10 +12,12 @@
 <body>
   <main id="game" aria-label="Khu vườn trên mây">
     <canvas id="farm" aria-label="Nông trại 2D. Chọn một ô hoa hoặc dùng danh sách ô trồng." tabindex="0"></canvas>
+    <div id="livestock-alerts" aria-label="Chăm sóc vật nuôi"></div>
+    <div class="view-controls surface"><button data-zoom="out" aria-label="Thu nhỏ">−</button><button data-zoom="reset" id="zoom-value" aria-label="Xem toàn bộ vườn">100%</button><button data-zoom="in" aria-label="Phóng to">+</button><span id="herd-status">Cuộn để thu phóng · Kéo để xem vườn</span></div>
     <div class="sky-grain" aria-hidden="true"></div>
     <header class="farm-heading surface"><span class="eyebrow" id="brand-caption">MỘT CHÚT BÌNH YÊN</span><h1 id="brand">Khu vườn trên mây</h1><span class="brand-detail" id="subtitle">Trồng niềm vui, gặt hạnh phúc.</span></header>
     <nav class="side-nav" aria-label="Điều hướng">
-      <button class="round-button" data-menu="mail" id="mail-button"><span data-icon="mail"></span><span class="notification-dot" id="mail-dot"></span><span class="sr-only" data-label="mail">Thư & sự kiện</span></button>
+      <button class="round-button" data-menu="mail" id="mail-button"><span data-icon="mail"></span><span class="notification-dot" id="mail-dot" aria-hidden="true">!</span><span class="sr-only" data-label="mail">Thư & sự kiện</span></button>
       <button class="round-button" data-menu="settings"><span data-icon="settings"></span><span class="sr-only" data-label="settings">Cài đặt</span></button>
       <span class="nav-separator"></span>
       <button class="round-button" data-menu="buildings"><span data-icon="house"></span><span class="sr-only" data-label="build">Xây dựng</span></button>
@@ -29,7 +31,7 @@
       <button class="wallet surface" data-menu="diamonds"><span data-icon="diamond"></span><span class="wallet-info"><small data-label="diamonds">KIM CƯƠNG</small><strong id="diamonds">—</strong></span><span class="wallet-plus">+</span></button>
     </aside>
     <div class="home-area"><button class="round-button" id="home"><span data-icon="home"></span><span class="sr-only" data-label="home">Về nông trại</span></button><span class="nav-caption" data-label="farm">Nông trại</span></div>
-    <button class="quest surface" data-menu="mail"><span class="eyebrow" data-label="firstHarvest">MÙA GẶT ĐẦU TIÊN</span><span class="quest-row"><strong data-label="harvestSix">Thu hoạch 6 ô hoa</strong><span id="quest-count">0 / 6</span></span><span class="progress"><span id="quest-progress"></span></span></button>
+    <button class="quest surface" data-menu="mail"><span class="eyebrow" id="quest-heading">MÙA GẶT ĐẦU TIÊN</span><span class="quest-row"><strong id="quest-summary">Thu hoạch 6 ô hoa</strong><span id="quest-count">0 / 6</span></span><span class="progress"><span id="quest-progress"></span></span></button>
     <nav class="tool-dock surface" aria-label="Dụng cụ">
       <button class="tool active" data-tool="select" aria-pressed="true"><span data-icon="pointer"></span><span data-label="select">Chọn</span><kbd>1</kbd></button>
       <button class="tool" data-menu="seeds" data-tool-label="plant" aria-pressed="false"><span data-icon="leaf"></span><span data-label="plant">Trồng hoa</span><kbd>2</kbd></button>

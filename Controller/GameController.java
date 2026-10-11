@@ -47,7 +47,7 @@ public final class GameController implements AutoCloseable {
             if(!method.equals("GET")&&!method.equals("HEAD")){send(exchange,405,Json.object("error","Method not allowed"));return;}
             Path file=frontend.resolve(path.equals("/")?"index.html":path.substring(1)).normalize();
             if(!file.startsWith(frontend)||!Files.isRegularFile(file)){send(exchange,404,Json.object("error","File not found"));return;}
-            String name=file.getFileName().toString();String type=name.endsWith(".html")?"text/html; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":"application/octet-stream";
+            String name=file.getFileName().toString();String type=name.endsWith(".html")?"text/html; charset=utf-8":name.endsWith(".css")?"text/css; charset=utf-8":name.endsWith(".js")?"text/javascript; charset=utf-8":name.endsWith(".svg")?"image/svg+xml":name.endsWith(".png")?"image/png":name.endsWith(".webp")?"image/webp":"application/octet-stream";
             exchange.getResponseHeaders().set("Content-Type",type);exchange.getResponseHeaders().set("X-Content-Type-Options","nosniff");
             exchange.getResponseHeaders().set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'");
             exchange.getResponseHeaders().set("Cache-Control","no-cache");byte[] bytes=Files.readAllBytes(file);

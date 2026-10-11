@@ -15,6 +15,9 @@ public class GameState {
     public final Map<ProductType,Integer> inventory = new EnumMap<>(ProductType.class);
     public int coins=320, diamonds=5, music=35, sfx=65;
     public boolean english, rewardClaimed, expanded;
+    public ChoCanhGac guardDog;
+    public final Map<String,Integer> questProgress=new HashMap<>();
+    public final Set<String> claimedQuests=new HashSet<>();
     private int harvestTotal;
     private double gameMinutes=480, sinceSave;
     private final Preferences preferences;
@@ -38,7 +41,10 @@ public class GameState {
             coins=Math.max(0,store.getInt("coins",320)); diamonds=Math.max(0,store.getInt("diamonds",5));
             music=Math.max(0,Math.min(100,store.getInt("music",35))); sfx=Math.max(0,Math.min(100,store.getInt("sfx",65)));
             english=store.getBoolean("english",false);rewardClaimed=store.getBoolean("rewardClaimed",false);
-            expanded=store.getBoolean("expanded",false);gameMinutes=Math.max(0,store.getDouble("gameMinutes",480));
+            guardDog=store.getBoolean("guardDog",false)?new ChoCanhGac():null;expanded=store.getBoolean("expanded",false);gameMinutes=Math.max(0,store.getDouble("gameMinutes",480));
+        }
+        if(store!=null) {
+            for(Quest q:QuestCatalog.ALL) {questProgress.put(q.metric(),Math.max(0,store.getInt("quest.progress."+q.metric(),0)));if(store.getBoolean("quest.claimed."+q.id(),false))claimedQuests.add(q.id());}
         }
         boolean current=store!=null&&store.getInt("schema",0)>=3;
         for(int row=0;row<3;row++) for(int col=0;col<4;col++) addPlot(row,col,current);
@@ -46,7 +52,7 @@ public class GameState {
         if(current) harvestTotal=Math.max(0,store.getInt("harvestTotal",0));
         for(BuildingType building:BuildingType.values())
             if(store==null?building==BuildingType.COOP:store.getBoolean("building."+building.name(),building==BuildingType.COOP)) buildings.add(building);
-        for(String id:List.of("ga","lon","bo")) {
+        for(String id:Animal.IDS) {
             if(store==null?id.equals("ga"):store.getBoolean("animal."+id+".exists",id.equals("ga"))) {
                 Animal animal=Animal.create(id);
                 if(buildings.contains(animal.habitat())) {
@@ -77,20 +83,38 @@ public class GameState {
     }
     public boolean plant(PlantPot pot,FlowerType flower) {
         if(pot==null||!pots.contains(pot)||!pot.isEmpty()||flower==null||!FlowerCatalog.ALL.contains(flower)||coins<flower.seedPrice()) return false;
-        coins-=flower.seedPrice();pot.plant(flower);save();return true;
+        coins-=flower.seedPrice();pot.plant(flower);increment("plant",1);save();return true;
     }
     public boolean dig(PlantPot pot) {
         if(pot==null||pot.isEmpty()||!pots.contains(pot))return false;
         pot.clear();save();return true;
     }
     public boolean water(PlantPot pot) {
-        if(pot==null||!pots.contains(pot)||!pot.water())return false;
+        if(pot==null||!pots.contains(pot))return false;
+        int previous=pot.getLevel();if(!pot.water())return false;
+        increment("water",1);if(previous<3&&pot.getLevel()==3)increment("level3",1);save();return true;
+    }
+    private void increment(String metric,int amount) {questProgress.merge(metric,amount,Integer::sum);}
+    public int questCount(Quest quest) {
+        return switch(quest.metric()) {
+            case "harvest" -> harvestTotal;
+            case "expanded" -> expanded?1:0;
+            case "cottage" -> buildings.contains(BuildingType.COTTAGE)?1:0;
+            case "habitats" -> (int)buildings.stream().filter(b->Set.of(BuildingType.COOP,BuildingType.MUD_PEN,BuildingType.COW_BARN).contains(b)).count();
+            case "hill_habitats" -> (int)buildings.stream().filter(b->b==BuildingType.SHEEP_BARN||b==BuildingType.GOAT_BARN).count();
+            case "guard_dog" -> guardDog!=null?1:0;
+            default -> questProgress.getOrDefault(quest.metric(),0);
+        };
+    }
+    public boolean questClaimed(Quest quest) {return claimedQuests.contains(quest.id())||quest.id().equals("first_harvest")&&rewardClaimed;}
+    public boolean claimQuest(String id) {
+        Quest quest=QuestCatalog.find(id);
+        if(questClaimed(quest)||questCount(quest)<quest.target())return false;
+        coins+=quest.coins();diamonds+=quest.diamonds();claimedQuests.add(id);
+        if(id.equals("first_harvest"))rewardClaimed=true;
         save();return true;
     }
-    public boolean claimReward() {
-        if(rewardClaimed||harvestTotal<6)return false;
-        coins+=120;diamonds++;rewardClaimed=true;save();return true;
-    }
+    public boolean claimReward() {return claimQuest("first_harvest");}
     public boolean expand() {
         if(expanded||coins<EXPANSION_PRICE)return false;
         coins-=EXPANSION_PRICE;expanded=true;
@@ -98,7 +122,7 @@ public class GameState {
         save();return true;
     }
     public boolean build(BuildingType type) {
-        if(type==null||buildings.contains(type)||coins<type.price||type==BuildingType.COTTAGE&&!expanded)return false;
+        if(type==null||buildings.contains(type)||coins<type.price||type.requiresExpansion()&&!expanded)return false;
         coins-=type.price;buildings.add(type);save();return true;
     }
     public boolean buyAnimal(String id) {
@@ -106,21 +130,26 @@ public class GameState {
         if(animals.containsKey(id)||!buildings.contains(animal.habitat())||coins<animal.purchasePrice())return false;
         coins-=animal.purchasePrice();animals.put(id,animal);save();return true;
     }
+    public boolean buyGuardDog() {
+        if(guardDog!=null||coins<ChoCanhGac.PRICE||(!buildings.contains(BuildingType.SHEEP_BARN)&&!buildings.contains(BuildingType.GOAT_BARN)))return false;
+        coins-=ChoCanhGac.PRICE;guardDog=new ChoCanhGac();save();return true;
+    }
+    public double gameMinutes() {return gameMinutes;}
     public boolean feedAnimal(String id) {
         Animal animal=animals.get(id);
         if(animal==null||animal.isFed()||coins<animal.feedPrice())return false;
-        coins-=animal.feedPrice();animal.feed();save();return true;
+        coins-=animal.feedPrice();animal.feed();increment("feed_"+id,1);save();return true;
     }
     public boolean collectAnimal(String id) {
         Animal animal=animals.get(id);
         if(animal==null||!animal.isReady())return false;
-        inventory.merge(animal.product(),animal.quantity(),Integer::sum);
+        inventory.merge(animal.product(),animal.quantity(),Integer::sum);increment("collect_"+animal.product().name(),animal.quantity());
         if(animal.consumedOnCollection())animals.remove(id);else animal.reset();
         save();return true;
     }
     public int stockValue() { return inventory.entrySet().stream().mapToInt(e->e.getKey().price*e.getValue()).sum(); }
     public int sellProducts() {
-        int value=stockValue();coins+=value;inventory.replaceAll((key,count)->0);save();return value;
+        int value=stockValue();coins+=value;if(value>0)increment("sold",value);inventory.replaceAll((key,count)->0);save();return value;
     }
     public int day() { return (int)(gameMinutes/1440)+1; }
     public int hour() { return (int)(gameMinutes%1440)/60; }
@@ -149,14 +178,16 @@ public class GameState {
             preferences.putInt("schema",3);preferences.putInt("coins",coins);preferences.putInt("diamonds",diamonds);
             preferences.putInt("music",music);preferences.putInt("sfx",sfx);preferences.putBoolean("english",english);
             preferences.putBoolean("rewardClaimed",rewardClaimed);preferences.putInt("harvestTotal",harvestTotal);
-            preferences.putBoolean("expanded",expanded);preferences.putDouble("gameMinutes",gameMinutes);
+            preferences.putBoolean("guardDog",guardDog!=null);preferences.putBoolean("expanded",expanded);preferences.putDouble("gameMinutes",gameMinutes);
+            for(var entry:questProgress.entrySet())preferences.putInt("quest.progress."+entry.getKey(),entry.getValue());
+            for(Quest q:QuestCatalog.ALL)preferences.putBoolean("quest.claimed."+q.id(),claimedQuests.contains(q.id()));
             for(PlantPot pot:pots) {
                 String key="plot."+pot.getRow()+"."+pot.getColumn();
                 preferences.put(key+".flower",pot.isEmpty()?"":pot.getFlower().id());preferences.putInt(key+".level",pot.getLevel());
                 preferences.putInt(key+".water",pot.getWater());preferences.putDouble(key+".cooldown",pot.getCooldown());
             }
             for(BuildingType b:BuildingType.values())preferences.putBoolean("building."+b.name(),buildings.contains(b));
-            for(String id:List.of("ga","lon","bo")) {
+            for(String id:Animal.IDS) {
                 Animal animal=animals.get(id);String key="animal."+id;
                 preferences.putBoolean(key+".exists",animal!=null);
                 if(animal!=null){preferences.putBoolean(key+".fed",animal.isFed());preferences.putDouble(key+".progress",animal.fraction()*animal.duration());}
@@ -167,11 +198,12 @@ public class GameState {
     public GameSave snapshot() {
         List<GameSave.Plot> plots=pots.stream().map(p->new GameSave.Plot(p.getRow(),p.getColumn(),p.isEmpty()?null:p.getFlower().id(),p.getLevel(),p.getWater(),p.cooldownSeconds())).toList();
         List<GameSave.Livestock> livestock=animals.values().stream().map(a->new GameSave.Livestock(a.id(),a.isFed(),a.fraction()*a.duration())).toList();
-        return new GameSave(coins,diamonds,music,sfx,english,rewardClaimed,expanded,harvestTotal,gameMinutes,plots,buildings,livestock,inventory);
+        return new GameSave(coins,diamonds,music,sfx,english,rewardClaimed,expanded,harvestTotal,gameMinutes,plots,buildings,livestock,inventory,questProgress,claimedQuests,guardDog!=null);
     }
     public void restore(GameSave save) {
-        coins=save.coins();diamonds=save.diamonds();music=save.music();sfx=save.sfx();english=save.english();
+        guardDog=save.guardDog()?new ChoCanhGac():null;coins=save.coins();diamonds=save.diamonds();music=save.music();sfx=save.sfx();english=save.english();
         rewardClaimed=save.rewardClaimed();expanded=save.expanded();harvestTotal=save.harvestTotal();gameMinutes=save.gameMinutes();
+        questProgress.clear();questProgress.putAll(save.questProgress());claimedQuests.clear();claimedQuests.addAll(save.claimedQuests());
         pots.clear();
         for(var plot:save.plots()) {
             PlantPot p=new PlantPot(plot.row(),plot.column());

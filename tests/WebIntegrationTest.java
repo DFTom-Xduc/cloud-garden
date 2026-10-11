@@ -16,7 +16,7 @@ import java.util.regex.*;
 public final class WebIntegrationTest {
     private static void check(boolean value,String message){if(!value)throw new AssertionError(message);}
     public static void main(String[] args) throws Exception {
-        FarmSmokeTest.main(args);database();failedSave();http();
+        FarmSmokeTest.main(args);QuestTest.main(args);HerdingTest.main(args);database();failedSave();http();
         System.out.println("PASS: SQLite cold reload, SQL rollback, service rollback, HTTP validation, concurrent harvest and static frontend.");
     }
     private static void database() throws Exception {

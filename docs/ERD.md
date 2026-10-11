@@ -82,7 +82,7 @@ PK là khóa chính, FK là khóa ngoại. Một khóa chính có nhiều cột 
 - animals tham chiếu cặp (player_id, building_type) của buildings: vật nuôi bắt buộc ở công trình người chơi đã sở hữu. CHECK buộc gà/chuồng gà, lợn/bãi bùn, bò/chuồng bò đúng loại. Với khóa chính và CHECK hiện tại, mỗi công trình chứa tối đa một vật nuôi trong demo.
 - Khóa (player_id,species) cho phép tối đa một gà, một lợn, một bò mỗi người chơi, khớp demo Java hiện có.
 - inventory nối player với product_types, lưu số lượng từng sản phẩm của từng người chơi.
-- Sản phẩm con vật tạo ra do Animal.product() của Ga/Lon/Bo quyết định. ERD không vẽ một đường animals → product_types vì schema không có khóa ngoại đó.
+- Sản phẩm con vật tạo ra do Animal.product() của Ga/Lon/Bo/Cuu/De quyết định. ERD không vẽ một đường animals → product_types vì schema không có khóa ngoại đó.
 - Schema cho phép nhiều dòng player. Ứng dụng hiện vẫn một nông trại, chưa có tài khoản/đăng nhập. Schema nhiều người không tự tạo chức năng multiplayer.
 
 ## OOP: sơ đồ lớp khác ERD
@@ -113,7 +113,7 @@ classDiagram
     }
 ```
 
-MysqlGameRepository là lớp cần viết tiếp, chưa có trong chương trình hiện tại. Ga/Lon/Bo cùng lưu vào bảng animals; đọc species rồi gọi Animal.create(species) để phục hồi đúng lớp Java. Không cần ba bảng chỉ vì có ba lớp con.
+MysqlGameRepository là lớp cần viết tiếp, chưa có trong chương trình hiện tại. Ga/Lon/Bo/Cuu/De cùng lưu vào bảng animals; đọc species rồi gọi Animal.create(species) để phục hồi đúng lớp Java. Các lớp con dùng chung bảng animals, phân biệt bằng species.
 
 ## Cách dùng các file
 
@@ -149,3 +149,9 @@ Luồng ứng dụng: frontend → GameController → GameService/GameState → 
 - JDBC URL: https://dev.mysql.com/doc/connector-j/en/connector-j-reference-jdbc-url-format.html
 - Reverse Engineer: https://dev.mysql.com/doc/workbench/en/wb-reverse-engineer-live.html
 - Export diagram: https://dev.mysql.com/doc/workbench/en/wb-data-modeling-menus.html
+
+## Cừu, dê và chó canh gác
+
+Thiết kế SQL đã thêm `cuu`/`de`, `SHEEP_BARN`/`GOAT_BARN`, `WOOL`/`GOAT_MEAT` và `farm_settings.guard_dog`. Chó là bạn đồng hành lâu dài, không thuộc bảng vật nuôi cho sản phẩm. Lịch lùa đàn được suy ra từ `player.game_minutes` và quyền sở hữu chó.
+
+Với database MySQL đã tạo trước đây, file `mysql-herds-migration.sql` là bản tham khảo để chạy một lần. Chưa chạy file này trên MySQL của người dùng; game Java vẫn dùng SQLite và tự nâng cấp SQLite khi mở. File `.mwb` và PNG cũ chưa có bảng `farm_settings`; reverse engineer lại nếu cần sơ đồ MySQL mới.
